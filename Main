@@ -1,0 +1,269 @@
+-- Services
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+local player = Players.LocalPlayer
+
+--------------------------------------------------
+-- SAVE SYSTEM
+--------------------------------------------------
+
+local saveFile = "FwerSABHub_Settings.json"
+
+local Settings = {
+	Speed = 30,
+	Jump = 50,
+	Gravity = 196,
+	Keybind = "RightShift",
+	AutoOpen = false
+}
+
+local function SaveSettings()
+	if writefile then
+		writefile(saveFile, HttpService:JSONEncode(Settings))
+	end
+end
+
+local function LoadSettings()
+	if readfile and isfile and isfile(saveFile) then
+		local data = HttpService:JSONDecode(readfile(saveFile))
+		for i,v in pairs(data) do
+			Settings[i] = v
+		end
+	end
+end
+
+LoadSettings()
+
+--------------------------------------------------
+-- GUI
+--------------------------------------------------
+
+local ScreenGui = Instance.new("ScreenGui", player.PlayerGui)
+
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0,360,0,320)
+Frame.Position = UDim2.new(0.5,-180,0.5,-160)
+Frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+Frame.Visible = Settings.AutoOpen
+
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1,0,0.15,0)
+Title.Text = "Fwer SAB Hub"
+Title.TextScaled = true
+Title.BackgroundTransparency = 1
+Title.TextColor3 = Color3.fromRGB(0,255,255)
+
+--------------------------------------------------
+-- DRAG
+--------------------------------------------------
+
+local dragging=false
+local dragStart,startPos
+
+Frame.InputBegan:Connect(function(i)
+	if i.UserInputType==Enum.UserInputType.MouseButton1 then
+		dragging=true
+		dragStart=i.Position
+		startPos=Frame.Position
+	end
+end)
+
+UIS.InputChanged:Connect(function(i)
+	if dragging and i.UserInputType==Enum.UserInputType.MouseMovement then
+		local d=i.Position-dragStart
+		Frame.Position=UDim2.new(startPos.X.Scale,startPos.X.Offset+d.X,startPos.Y.Scale,startPos.Y.Offset+d.Y)
+	end
+end)
+
+UIS.InputEnded:Connect(function(i)
+	if i.UserInputType==Enum.UserInputType.MouseButton1 then
+		dragging=false
+	end
+end)
+
+--------------------------------------------------
+-- TABS
+--------------------------------------------------
+
+local MainTab=Instance.new("TextButton",Frame)
+MainTab.Size=UDim2.new(0.25,0,0.12,0)
+MainTab.Position=UDim2.new(0,0,0.15,0)
+MainTab.Text="Main"
+
+local SettingsTab=Instance.new("TextButton",Frame)
+SettingsTab.Size=UDim2.new(0.25,0,0.12,0)
+SettingsTab.Position=UDim2.new(0,0,0.28,0)
+SettingsTab.Text="Settings"
+
+local MainPage=Instance.new("Frame",Frame)
+MainPage.Size=UDim2.new(0.75,0,0.85,0)
+MainPage.Position=UDim2.new(0.25,0,0.15,0)
+MainPage.BackgroundTransparency=1
+
+local SettingsPage=MainPage:Clone()
+SettingsPage.Parent=Frame
+SettingsPage.Visible=false
+
+--------------------------------------------------
+-- CHARACTER
+--------------------------------------------------
+
+local humanoid
+local function loadChar()
+	local c=player.Character or player.CharacterAdded:Wait()
+	humanoid=c:WaitForChild("Humanoid")
+	humanoid.WalkSpeed=Settings.Speed
+	humanoid.JumpPower=Settings.Jump
+	workspace.Gravity=Settings.Gravity
+end
+loadChar()
+player.CharacterAdded:Connect(loadChar)
+
+--------------------------------------------------
+-- MAIN PAGE
+--------------------------------------------------
+
+local SpeedBtn=Instance.new("TextButton",MainPage)
+SpeedBtn.Size=UDim2.new(0.6,0,0.18,0)
+SpeedBtn.Position=UDim2.new(0.2,0,0.05,0)
+SpeedBtn.Text="Speed Boost"
+
+SpeedBtn.MouseButton1Click:Connect(function()
+	humanoid.WalkSpeed=Settings.Speed
+end)
+
+local JumpBtn=Instance.new("TextButton",MainPage)
+JumpBtn.Size=UDim2.new(0.4,0,0.18,0)
+JumpBtn.Position=UDim2.new(0.1,0,0.28,0)
+JumpBtn.Text="Jump Boost"
+
+local JumpBox=Instance.new("TextBox",MainPage)
+JumpBox.Size=UDim2.new(0.3,0,0.18,0)
+JumpBox.Position=UDim2.new(0.55,0,0.28,0)
+JumpBox.Text=tostring(Settings.Jump)
+
+JumpBtn.MouseButton1Click:Connect(function()
+	local v=tonumber(JumpBox.Text)
+	if v then
+		Settings.Jump=v
+		humanoid.JumpPower=v
+	end
+end)
+
+local GravBtn=Instance.new("TextButton",MainPage)
+GravBtn.Size=UDim2.new(0.4,0,0.18,0)
+GravBtn.Position=UDim2.new(0.1,0,0.51,0)
+GravBtn.Text="Gravity"
+
+local GravBox=Instance.new("TextBox",MainPage)
+GravBox.Size=UDim2.new(0.3,0,0.18,0)
+GravBox.Position=UDim2.new(0.55,0,0.51,0)
+GravBox.Text=tostring(Settings.Gravity)
+
+GravBtn.MouseButton1Click:Connect(function()
+	local v=tonumber(GravBox.Text)
+	if v then
+		Settings.Gravity=v
+		workspace.Gravity=v
+	end
+end)
+
+--------------------------------------------------
+-- SETTINGS PAGE
+--------------------------------------------------
+
+local OptimizeBtn=Instance.new("TextButton",SettingsPage)
+OptimizeBtn.Size=UDim2.new(0.6,0,0.15,0)
+OptimizeBtn.Position=UDim2.new(0.2,0,0.05,0)
+OptimizeBtn.Text="Optimization"
+
+OptimizeBtn.MouseButton1Click:Connect(function()
+	for _,v in pairs(workspace:GetDescendants()) do
+		if v:IsA("Texture") or v:IsA("Decal") then
+			v:Destroy()
+		end
+	end
+end)
+
+local NoAnimBtn=Instance.new("TextButton",SettingsPage)
+NoAnimBtn.Size=UDim2.new(0.6,0,0.15,0)
+NoAnimBtn.Position=UDim2.new(0.2,0,0.23,0)
+NoAnimBtn.Text="No Animation"
+
+NoAnimBtn.MouseButton1Click:Connect(function()
+	for _,t in pairs(humanoid:GetPlayingAnimationTracks()) do
+		t:Stop()
+	end
+	local a=humanoid:FindFirstChildOfClass("Animator")
+	if a then a:Destroy() end
+end)
+
+-- Keybind
+local KeyBox=Instance.new("TextBox",SettingsPage)
+KeyBox.Size=UDim2.new(0.4,0,0.15,0)
+KeyBox.Position=UDim2.new(0.1,0,0.42,0)
+KeyBox.Text=Settings.Keybind
+
+local SetKeyBtn=Instance.new("TextButton",SettingsPage)
+SetKeyBtn.Size=UDim2.new(0.3,0,0.15,0)
+SetKeyBtn.Position=UDim2.new(0.55,0,0.42,0)
+SetKeyBtn.Text="Set Keybind"
+
+UIS.InputBegan:Connect(function(i)
+	if KeyBox:IsFocused() then
+		KeyBox.Text=i.KeyCode.Name
+	end
+end)
+
+SetKeyBtn.MouseButton1Click:Connect(function()
+	if Enum.KeyCode[KeyBox.Text] then
+		Settings.Keybind=KeyBox.Text
+	end
+end)
+
+-- Auto Open
+local AutoBtn=Instance.new("TextButton",SettingsPage)
+AutoBtn.Size=UDim2.new(0.6,0,0.15,0)
+AutoBtn.Position=UDim2.new(0.2,0,0.60,0)
+AutoBtn.Text="Auto Open: "..tostring(Settings.AutoOpen)
+
+AutoBtn.MouseButton1Click:Connect(function()
+	Settings.AutoOpen=not Settings.AutoOpen
+	AutoBtn.Text="Auto Open: "..tostring(Settings.AutoOpen)
+end)
+
+-- Save Button
+local SaveBtn=Instance.new("TextButton",SettingsPage)
+SaveBtn.Size=UDim2.new(0.6,0,0.15,0)
+SaveBtn.Position=UDim2.new(0.2,0,0.78,0)
+SaveBtn.Text="Save Settings"
+
+SaveBtn.MouseButton1Click:Connect(function()
+	SaveSettings()
+	SaveBtn.Text="Saved!"
+end)
+
+--------------------------------------------------
+-- KEYBIND TOGGLE
+--------------------------------------------------
+
+UIS.InputBegan:Connect(function(i,gp)
+	if not gp and i.KeyCode==Enum.KeyCode[Settings.Keybind] then
+		Frame.Visible=not Frame.Visible
+	end
+end)
+
+--------------------------------------------------
+-- TAB SWITCH
+--------------------------------------------------
+
+MainTab.MouseButton1Click:Connect(function()
+	MainPage.Visible=true
+	SettingsPage.Visible=false
+end)
+
+SettingsTab.MouseButton1Click:Connect(function()
+	MainPage.Visible=false
+	SettingsPage.Visible=true
+end)
